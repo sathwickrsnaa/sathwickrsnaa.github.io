@@ -3,285 +3,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake by Newton</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>Glowing Contact</title>
+    <!-- Include the canvas-confetti library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
+        /* Basic setup for the body to center content and provide a background */
         body {
-            font-family: 'Press Start 2P', cursive;
-            background-color: #1a1a1a;
-            color: #f0f0f0;
-            overflow: hidden; /* Prevents scrollbars from appearing */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            /* New background to match the mood */
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden; /* Hide scrollbars */
+            /* Added transition for the background */
+            transition: background 0.5s ease-in-out;
         }
-        .game-container {
-            max-width: 90vw;
-            max-height: 90vh;
-            aspect-ratio: 1;
+
+        /* New class to darken the background on contact */
+        body.contact-bg {
+            background: #000;
         }
-        canvas {
-            background-color: #101010;
-            border: 4px solid #333;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+
+        /* Styling for the character elements */
+        .character {
+            width: 150px;
+            height: 150px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            position: absolute; /* Absolute positioning to allow dragging */
+            cursor: grab; /* Change cursor to indicate draggable item */
+            user-select: none; /* Prevents text selection during drag */
+            transition: filter 0.4s ease-in-out; /* Smooth transition for the glow effect */
+            /* Ensure characters are above the confetti canvas */
+            z-index: 20;
         }
-        .btn-control {
-            transition: all 0.1s ease-in-out;
+
+        /* Specific styles and image for the boy */
+        #boy {
+            left: 30%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            /* New image for the boy character */
+            background-image: url(https://png.pngtree.com/png-vector/20240121/ourmid/pngtree-a-school-boy-white-background-png-image_11510916.png);
         }
-        .btn-control:active {
-            transform: scale(0.95);
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+
+        /* Specific styles and image for the girl */
+        #girl {
+            left: 70%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            /* New image for the girl character */
+            background-image: url(https://static.vecteezy.com/system/resources/thumbnails/025/003/253/small_2x/cute-cartoon-girl-student-character-on-transparent-background-generative-ai-png.png);
         }
-        #message-box {
-            transition: opacity 0.5s ease-in-out;
+        /* The glow effect class */
+        .glow {
+            /* Using filter: drop-shadow is great for transparent PNGs as it follows the shape */
+            filter: drop-shadow(0 0 15px #00e6e6) drop-shadow(0 0 35px #00e6e6);
         }
+        
+        /* Instruction text style */
+        .instructions {
+            position: absolute;
+            top: 20px;
+            font-size: 1.5em; /* Increased font size */
+            font-family: 'Courier New', Courier, monospace; /* Monospaced font for typewriter effect */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 30; /* Ensure instructions are on top */
+            /* Added for typewriter cursor positioning */
+            display: inline-block;
+        }
+
+        /* Blinking cursor for typewriter effect */
+        .instructions::after {
+            content: '|';
+            display: inline-block;
+            animation: blink 1s step-end infinite;
+        }
+        
+        /* Class to hide cursor when typing is done */
+        .instructions.typing-done::after {
+            display: none;
+        }
+
+        @keyframes blink {
+            from, to {
+                color: transparent;
+            }
+            50% {
+                color: white;
+            }
+        }
+
+        /* Canvas for the confetti effect */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Make sure canvas doesn't block mouse events for characters */
+            pointer-events: none; 
+            z-index: 10;
+        }
+
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="w-full max-w-lg text-center mb-4">
-        <div>
-            <h1 class="text-4xl md:text-5xl font-bold text-green-400 tracking-wider">Snake</h1>
-            <p class="text-sm text-gray-400 mt-2">by Newton to Smrithi</p>
-        </div>
-        <div class="flex justify-between items-center mt-4 text-lg md:text-xl px-2">
-            <p>SCORE: <span id="score" class="font-bold text-yellow-300">0</span></p>
-            <p>HIGH SCORE: <span id="high-score" class="font-bold text-yellow-300">0</span></p>
-        </div>
-    </div>
+    <div id="instructions" class="instructions"></div>
+    
+    <!-- Canvas for confetti -->
+    <canvas id="confetti-canvas"></canvas>
 
-    <div class="relative game-container">
-        <canvas id="gameCanvas" class="w-full h-full"></canvas>
-        <div id="message-box" class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 rounded-lg">
-            <h2 id="message-title" class="text-3xl md:text-4xl font-bold text-white mb-4">Ready?</h2>
-            <button id="start-button" class="px-8 py-4 bg-green-500 text-black rounded-lg text-xl font-bold shadow-lg hover:bg-green-400 transition-colors">Start Game</button>
-        </div>
-    </div>
-
-    <div class="mt-6 flex flex-col items-center">
-        <div class="flex space-x-4">
-            <button id="up-btn" class="btn-control bg-gray-700 p-4 rounded-lg shadow-md w-16 h-16 text-2xl">▲</button>
-        </div>
-        <div class="flex space-x-4 mt-4">
-            <button id="left-btn" class="btn-control bg-gray-700 p-4 rounded-lg shadow-md w-16 h-16 text-2xl">◀</button>
-            <button id="down-btn" class="btn-control bg-gray-700 p-4 rounded-lg shadow-md w-16 h-16 text-2xl">▼</button>
-            <button id="right-btn" class="btn-control bg-gray-700 p-4 rounded-lg shadow-md w-16 h-16 text-2xl">▶</button>
-        </div>
-    </div>
-
+    <!-- The character elements -->
+    <div id="boy" class="character"></div>
+    <div id="girl" class="character"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
+        // Get references to the character elements from the DOM
+        const boy = document.getElementById('boy');
+        const girl = document.getElementById('girl');
+        const instructionsEl = document.getElementById('instructions');
 
-            const scoreEl = document.getElementById('score');
-            const highScoreEl = document.getElementById('high-score');
-            const startButton = document.getElementById('start-button');
-            const messageBox = document.getElementById('message-box');
-            const messageTitle = document.getElementById('message-title');
+        // --- TYPEWRITER EFFECT ---
+        const textToType = "Make them meet!!";
+        let charIndex = 0;
 
-            // --- Game Configuration ---
-            const gridSize = 20; // The size of each square in the grid
-            let canvasSize; // Will be set dynamically
-            let tileCount; // Number of tiles in each row/column
-
-            // --- Game State ---
-            let snake = [];
-            let food = {};
-            let direction = 'right';
-            let nextDirection = 'right';
-            let score = 0;
-            let highScore = localStorage.getItem('snakeHighScore') || 0;
-            let gameOver = false;
-            let gameInterval = null;
-            let gameSpeed = 150; // Initial speed in ms
-
-            // --- UI Elements ---
-            const upBtn = document.getElementById('up-btn');
-            const downBtn = document.getElementById('down-btn');
-            const leftBtn = document.getElementById('left-btn');
-            const rightBtn = document.getElementById('right-btn');
-
-            // --- Setup and Initialization ---
-
-            function resizeCanvas() {
-                const container = canvas.parentElement;
-                const size = Math.min(container.clientWidth, container.clientHeight);
-                canvasSize = Math.floor(size / gridSize) * gridSize;
-                canvas.width = canvasSize;
-                canvas.height = canvasSize;
-                tileCount = canvasSize / gridSize;
+        function typeWriter() {
+            if (charIndex < textToType.length) {
+                instructionsEl.textContent += textToType.charAt(charIndex);
+                charIndex++;
+                setTimeout(typeWriter, 150); // Adjust typing speed here (in ms)
+            } else {
+                // Add class to hide the cursor when typing is finished
+                instructionsEl.classList.add('typing-done');
             }
+        }
+        // Start the typewriter effect when the page loads
+        window.addEventListener('load', typeWriter);
+        // --- END TYPEWRITER EFFECT ---
 
-            function initializeGame() {
-                // Reset game state
-                snake = [{ x: 10, y: 10 }];
-                direction = 'right';
-                nextDirection = 'right';
-                score = 0;
-                gameOver = false;
-                gameSpeed = 150;
-                scoreEl.textContent = score;
-                highScoreEl.textContent = highScore;
 
-                // Place initial food
-                placeFood();
+        // Variables to keep track of the element being dragged and its offset
+        let activeCharacter = null;
+        let offsetX, offsetY;
 
-                // Hide message box and start game loop
-                messageBox.style.opacity = '0';
-                messageBox.style.pointerEvents = 'none';
-                
-                if (gameInterval) clearInterval(gameInterval);
-                gameInterval = setInterval(gameLoop, gameSpeed);
+        // State to track if they are already colliding to fire confetti only once
+        let isAlreadyColliding = false;
+
+        /**
+         * Function to start dragging a character.
+         * Triggered on mousedown.
+         * @param {MouseEvent} e - The mousedown event.
+         */
+        function startDrag(e) {
+            // Set the active character to the one that was clicked
+            activeCharacter = e.target;
+            activeCharacter.style.cursor = 'grabbing'; // Change cursor to 'grabbing'
+
+            // Calculate the mouse's offset from the top-left corner of the element
+            offsetX = e.clientX - activeCharacter.getBoundingClientRect().left;
+            offsetY = e.clientY - activeCharacter.getBoundingClientRect().top;
+
+            // Add event listeners to the whole document to track mouse movement and release
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        /**
+         * Function to handle the dragging movement.
+         * Triggered on mousemove.
+         * @param {MouseEvent} e - The mousemove event.
+         */
+        function drag(e) {
+            if (!activeCharacter) return; // Do nothing if no character is being dragged
+
+            e.preventDefault(); // Prevent default browser behavior (like selecting text)
+
+            // Update the character's position based on mouse movement
+            activeCharacter.style.left = `${e.clientX - offsetX}px`;
+            activeCharacter.style.top = `${e.clientY - offsetY}px`;
+
+            // Check for collision after every move
+            checkCollision();
+        }
+
+        /**
+         * Function to stop the dragging action.
+         * Triggered on mouseup.
+         */
+        function stopDrag() {
+            if (activeCharacter) {
+                 activeCharacter.style.cursor = 'grab'; // Revert cursor
             }
+            // Reset the active character
+            activeCharacter = null;
             
-            // --- Game Loop ---
+            // Remove the event listeners from the document
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
 
-            function gameLoop() {
-                if (gameOver) {
-                    clearInterval(gameInterval);
-                    showGameOver();
-                    return;
-                }
-                
-                direction = nextDirection;
-                moveSnake();
-                checkCollision();
-                if (!gameOver) {
-                    draw();
-                }
-            }
+        /**
+         * Function to check if the two characters are colliding.
+         */
+        function checkCollision() {
+            // Get the bounding rectangles of both characters
+            const boyRect = boy.getBoundingClientRect();
+            const girlRect = girl.getBoundingClientRect();
 
-            // --- Drawing Functions ---
+            // AABB (Axis-Aligned Bounding Box) collision detection logic
+            const isColliding =
+                boyRect.left < girlRect.right &&
+                boyRect.right > girlRect.left &&
+                boyRect.top < girlRect.bottom &&
+                boyRect.bottom > girlRect.top;
 
-            function draw() {
-                // Clear canvas
-                ctx.fillStyle = '#101010';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // If they are colliding, add the 'glow' class to both and darken the background
+            if (isColliding) {
+                boy.classList.add('glow');
+                girl.classList.add('glow');
+                document.body.classList.add('contact-bg');
 
-                // Draw snake
-                ctx.fillStyle = '#00ff00'; // Snake color
-                snake.forEach((segment, index) => {
-                    // Head has a different color
-                    ctx.fillStyle = index === 0 ? '#33ff33' : '#00cc00';
-                    ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
-                });
-
-                // Draw food
-                ctx.fillStyle = '#ff4136'; // Food color
-                ctx.beginPath();
-                ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2 - 1, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-            
-            // --- Game Logic ---
-
-            function moveSnake() {
-                const head = { ...snake[0] }; // Copy the head
-
-                switch (direction) {
-                    case 'up': head.y--; break;
-                    case 'down': head.y++; break;
-                    case 'left': head.x--; break;
-                    case 'right': head.x++; break;
+                // If this is the first moment of collision, fire confetti
+                if (!isAlreadyColliding) {
+                    confetti({
+                        particleCount: 200,
+                        spread: 100,
+                        origin: { y: 0.6 }
+                    });
+                    isAlreadyColliding = true; // Set flag to prevent re-firing
                 }
 
-                snake.unshift(head); // Add new head
+            } else {
+                // Otherwise, remove the 'glow' class and revert the background
+                boy.classList.remove('glow');
+                girl.classList.remove('glow');
+                document.body.classList.remove('contact-bg');
 
-                // Check if snake ate food
-                if (head.x === food.x && head.y === food.y) {
-                    score++;
-                    scoreEl.textContent = score;
-                    if (score > highScore) {
-                        highScore = score;
-                        highScoreEl.textContent = highScore;
-                        localStorage.setItem('snakeHighScore', highScore);
-                    }
-                    placeFood();
-                    // Increase speed
-                    clearInterval(gameInterval);
-                    gameSpeed = Math.max(50, gameSpeed * 0.95); // Speed up, with a max speed
-                    gameInterval = setInterval(gameLoop, gameSpeed);
-                } else {
-                    snake.pop(); // Remove tail
-                }
+                // Reset the collision flag when they separate
+                isAlreadyColliding = false;
             }
+        }
 
-            function placeFood() {
-                let foodX, foodY;
-                do {
-                    foodX = Math.floor(Math.random() * tileCount);
-                    foodY = Math.floor(Math.random() * tileCount);
-                } while (snake.some(segment => segment.x === foodX && segment.y === foodY));
-                
-                food = { x: foodX, y: foodY };
-            }
+        // Add the mousedown event listener to both characters to initiate dragging
+        boy.addEventListener('mousedown', startDrag);
+        girl.addEventListener('mousedown', startDrag);
 
-            function checkCollision() {
-                const head = snake[0];
-
-                // Wall collision
-                if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-                    gameOver = true;
-                    return;
-                }
-
-                // Self collision
-                for (let i = 1; i < snake.length; i++) {
-                    if (head.x === snake[i].x && head.y === snake[i].y) {
-                        gameOver = true;
-                        return;
-                    }
-                }
-            }
-            
-            function showGameOver() {
-                messageTitle.textContent = 'Game Over!';
-                startButton.textContent = 'Play Again';
-                messageBox.style.opacity = '1';
-                messageBox.style.pointerEvents = 'auto';
-            }
-
-            // --- Event Listeners ---
-
-            function handleKeyPress(e) {
-                const key = e.key;
-                if (key === 'ArrowUp' && direction !== 'down') nextDirection = 'up';
-                else if (key === 'ArrowDown' && direction !== 'up') nextDirection = 'down';
-                else if (key === 'ArrowLeft' && direction !== 'right') nextDirection = 'left';
-                else if (key === 'ArrowRight' && direction !== 'left') nextDirection = 'right';
-            }
-
-            document.addEventListener('keydown', handleKeyPress);
-            startButton.addEventListener('click', initializeGame);
-
-            // Mobile controls
-            upBtn.addEventListener('click', () => { if (direction !== 'down') nextDirection = 'up'; });
-            downBtn.addEventListener('click', () => { if (direction !== 'up') nextDirection = 'down'; });
-            leftBtn.addEventListener('click', () => { if (direction !== 'right') nextDirection = 'left'; });
-            rightBtn.addEventListener('click', () => { if (direction !== 'left') nextDirection = 'right'; });
-            
-            window.addEventListener('resize', () => {
-                const wasRunning = !!gameInterval && !gameOver;
-                if (gameInterval) clearInterval(gameInterval);
-                
-                resizeCanvas();
-                
-                if (wasRunning) {
-                    // If the game was running, redraw and restart the loop
-                    draw();
-                    gameInterval = setInterval(gameLoop, gameSpeed);
-                } else {
-                    // If the game was over or not started, just redraw the last state
-                    draw();
-                }
-            });
-
-            // --- Initial Setup ---
-            resizeCanvas();
-            highScoreEl.textContent = highScore;
-            draw(); // Draw initial empty state
-        });
     </script>
 
 </body>
