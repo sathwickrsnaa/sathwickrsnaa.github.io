@@ -60,6 +60,7 @@
             /* New image for the girl character */
             background-image: url(https://static.vecteezy.com/system/resources/thumbnails/025/003/253/small_2x/cute-cartoon-girl-student-character-on-transparent-background-generative-ai-png.png);
         }
+
         /* The glow effect class */
         .glow {
             /* Using filter: drop-shadow is great for transparent PNGs as it follows the shape */
@@ -158,36 +159,49 @@
 
         /**
          * Function to start dragging a character.
-         * Triggered on mousedown.
-         * @param {MouseEvent} e - The mousedown event.
+         * Handles both mouse and touch events.
+         * @param {MouseEvent|TouchEvent} e - The mousedown or touchstart event.
          */
         function startDrag(e) {
-            // Set the active character to the one that was clicked
             activeCharacter = e.target;
-            activeCharacter.style.cursor = 'grabbing'; // Change cursor to 'grabbing'
+            activeCharacter.style.cursor = 'grabbing';
 
-            // Calculate the mouse's offset from the top-left corner of the element
-            offsetX = e.clientX - activeCharacter.getBoundingClientRect().left;
-            offsetY = e.clientY - activeCharacter.getBoundingClientRect().top;
+            // Get the correct client coordinates for mouse or touch
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            // Add event listeners to the whole document to track mouse movement and release
+            // Calculate the offset from the top-left corner of the element
+            offsetX = clientX - activeCharacter.getBoundingClientRect().left;
+            offsetY = clientY - activeCharacter.getBoundingClientRect().top;
+
+            // Add listeners for both mouse and touch move/end events
             document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false }); // passive: false to allow preventDefault
+            
             document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
         }
 
         /**
          * Function to handle the dragging movement.
-         * Triggered on mousemove.
-         * @param {MouseEvent} e - The mousemove event.
+         * Handles both mouse and touch events.
+         * @param {MouseEvent|TouchEvent} e - The mousemove or touchmove event.
          */
         function drag(e) {
             if (!activeCharacter) return; // Do nothing if no character is being dragged
 
-            e.preventDefault(); // Prevent default browser behavior (like selecting text)
+            // Prevent default behavior like scrolling on touch devices
+            if (e.type === 'touchmove') {
+                e.preventDefault();
+            }
 
-            // Update the character's position based on mouse movement
-            activeCharacter.style.left = `${e.clientX - offsetX}px`;
-            activeCharacter.style.top = `${e.clientY - offsetY}px`;
+            // Get the correct client coordinates for mouse or touch
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // Update the character's position
+            activeCharacter.style.left = `${clientX - offsetX}px`;
+            activeCharacter.style.top = `${clientY - offsetY}px`;
 
             // Check for collision after every move
             checkCollision();
@@ -195,18 +209,19 @@
 
         /**
          * Function to stop the dragging action.
-         * Triggered on mouseup.
+         * Handles both mouse and touch events.
          */
         function stopDrag() {
             if (activeCharacter) {
                  activeCharacter.style.cursor = 'grab'; // Revert cursor
             }
-            // Reset the active character
             activeCharacter = null;
             
-            // Remove the event listeners from the document
+            // Remove all move/end listeners
             document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchmove', drag);
             document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchend', stopDrag);
         }
 
         /**
@@ -251,9 +266,13 @@
             }
         }
 
-        // Add the mousedown event listener to both characters to initiate dragging
+        // Add mousedown event listener for desktop
         boy.addEventListener('mousedown', startDrag);
         girl.addEventListener('mousedown', startDrag);
+
+        // Add touchstart event listener for mobile
+        boy.addEventListener('touchstart', startDrag);
+        girl.addEventListener('touchstart', startDrag);
 
     </script>
 
