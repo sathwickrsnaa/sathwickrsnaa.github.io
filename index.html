@@ -3,277 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glowing Contact</title>
-    <!-- Include the canvas-confetti library -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <title>A Little Note for You</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Basic setup for the body to center content and provide a background */
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            /* New background to match the mood */
-            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
-            font-family: 'Arial', sans-serif;
-            color: white;
-            overflow: hidden; /* Hide scrollbars */
-            /* Added transition for the background */
-            transition: background 0.5s ease-in-out;
-        }
-
-        /* New class to darken the background on contact */
-        body.contact-bg {
-            background: #000;
-        }
-
-        /* Styling for the character elements */
-        .character {
-            width: 150px;
-            height: 150px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            position: absolute; /* Absolute positioning to allow dragging */
-            cursor: grab; /* Change cursor to indicate draggable item */
-            user-select: none; /* Prevents text selection during drag */
-            transition: filter 0.4s ease-in-out; /* Smooth transition for the glow effect */
-            /* Ensure characters are above the confetti canvas */
-            z-index: 20;
-        }
-
-        /* Specific styles and image for the boy */
-        #boy {
-            left: 30%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            /* New image for the boy character */
-            background-image: url(https://png.pngtree.com/png-vector/20240121/ourmid/pngtree-a-school-boy-white-background-png-image_11510916.png);
-        }
-
-        /* Specific styles and image for the girl */
-        #girl {
-            left: 70%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            /* New image for the girl character */
-            background-image: url(https://static.vecteezy.com/system/resources/thumbnails/025/003/253/small_2x/cute-cartoon-girl-student-character-on-transparent-background-generative-ai-png.png);
-        }
-
-        /* The glow effect class */
-        .glow {
-            /* Using filter: drop-shadow is great for transparent PNGs as it follows the shape */
-            filter: drop-shadow(0 0 15px #00e6e6) drop-shadow(0 0 35px #00e6e6);
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
         }
         
-        /* Instruction text style */
-        .instructions {
+        /* General Animations */
+        .fade-in { animation: fadeIn 2s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .slide-in-up { animation: slideInUp 1s ease-in-out forwards; opacity: 0; }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Breathing Cloud Animation */
+        .breathing-cloud {
+            animation: breathe 8s ease-in-out infinite;
+            filter: drop-shadow(0 4px 10px rgba(167, 139, 250, 0.3));
+        }
+        
+        #breathing-text {
+            animation: textFade 8s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(0.95); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes textFade {
+            0%, 45%, 100% { opacity: 1; }
+            50%, 95% { opacity: 1; }
+        }
+
+        /* Sparkle Effect on Click/Tap */
+        .sparkle {
             position: absolute;
-            top: 20px;
-            font-size: 1.5em; /* Increased font size */
-            font-family: 'Courier New', Courier, monospace; /* Monospaced font for typewriter effect */
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            z-index: 30; /* Ensure instructions are on top */
-            /* Added for typewriter cursor positioning */
-            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle-anim 0.8s forwards;
+            z-index: 9999;
         }
 
-        /* Blinking cursor for typewriter effect */
-        .instructions::after {
-            content: '|';
-            display: inline-block;
-            animation: blink 1s step-end infinite;
-        }
-        
-        /* Class to hide cursor when typing is done */
-        .instructions.typing-done::after {
-            display: none;
-        }
-
-        @keyframes blink {
-            from, to {
-                color: transparent;
+        @keyframes sparkle-anim {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.8;
             }
-            50% {
-                color: white;
+            100% {
+                transform: scale(1.5) translate(calc(var(--x) * 40px), calc(var(--y) * 40px));
+                opacity: 0;
             }
         }
-
-        /* Canvas for the confetti effect */
-        #confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* Make sure canvas doesn't block mouse events for characters */
-            pointer-events: none; 
-            z-index: 10;
-        }
-
     </style>
 </head>
-<body>
+<body class="bg-violet-50 flex items-center justify-center min-h-screen" id="main-body">
 
-    <div id="instructions" class="instructions"></div>
-    
-    <!-- Canvas for confetti -->
-    <canvas id="confetti-canvas"></canvas>
+    <div class="w-full max-w-lg mx-auto p-6 md:p-10 text-center fade-in">
+        
+        <!-- Main Message Container -->
+        <div class="bg-white bg-opacity-70 backdrop-blur-sm rounded-2xl shadow-lg p-8 md:p-12">
+            
+            <!-- Header -->
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4 slide-in-up" style="animation-delay: 0.2s;">
+                Psst... a little note for you!
+            </h1>
+            <p class="text-lg text-gray-600 mb-8 slide-in-up" style="animation-delay: 0.4s;">
+                Even on cloudy days, there's a bit of sunshine. Let's find it together.
+            </p>
 
-    <!-- The character elements -->
-    <div id="boy" class="character"></div>
-    <div id="girl" class="character"></div>
+            <!-- Breathing Cloud -->
+            <div class="flex flex-col items-center justify-center my-10 slide-in-up" style="animation-delay: 0.6s;">
+                <div class="breathing-cloud w-48">
+                    <svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M81.4,52.2C74.2,52.2,68,46,68,38.8c0-5.6,3.5-10.4,8.4-12.4c-2.2-10-11.2-17.6-21.9-17.6c-10.2,0-18.8,6.8-21.5,16.2C28.2,23.3,24,19.4,19,19.4c-6.6,0-12,5.4-12,12s5.4,12,12,12h62.4C87.8,43.4,91,47.4,91,52.2c0,4.9-3.9,8.8-8.8,8.8c-2.6,0-5-1.1-6.6-2.9C75.2,59.6,73,61,70.6,61c-4.9,0-8.8-3.9-8.8-8.8H81.4z" fill="#c4b5fd"/>
+                        <circle cx="35" cy="38" r="3" fill="white"/>
+                        <circle cx="50" cy="38" r="3" fill="white"/>
+                    </svg>
+                </div>
+                 <div id="breathing-text" class="mt-4 text-lg font-semibold text-violet-500">Breathe In...</div>
+            </div>
+
+            <!-- Affirmation Button -->
+            <button id="affirmationButton" class="bg-violet-400 hover:bg-violet-500 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-opacity-75 slide-in-up" style="animation-delay: 0.8s;">
+                A happy thought for me
+            </button>
+
+            <!-- Hidden Affirmation -->
+            <div id="affirmationMessage" class="hidden mt-8 p-5 bg-violet-100 rounded-lg slide-in-up">
+                <p class="text-lg font-semibold text-violet-700">
+                    You are stronger than you feel right now.
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-gray-500 text-sm slide-in-up" style="animation-delay: 1s;">
+            <p>You're doing great, just by being here.</p>
+        </footer>
+
+    </div>
 
     <script>
-        // Get references to the character elements from the DOM
-        const boy = document.getElementById('boy');
-        const girl = document.getElementById('girl');
-        const instructionsEl = document.getElementById('instructions');
+        // --- Breathing Text Logic ---
+        const breathingText = document.getElementById('breathing-text');
+        const textStates = ['Breathe In...', 'Hold...', 'Breathe Out...'];
+        let currentStateIndex = 0;
 
-        // --- TYPEWRITER EFFECT ---
-        const textToType = "Make them meet!!";
-        let charIndex = 0;
-
-        function typeWriter() {
-            if (charIndex < textToType.length) {
-                instructionsEl.textContent += textToType.charAt(charIndex);
-                charIndex++;
-                setTimeout(typeWriter, 150); // Adjust typing speed here (in ms)
+        setInterval(() => {
+            if (breathingText.textContent === 'Breathe In...') {
+                setTimeout(() => { breathingText.textContent = 'Hold...'; }, 3800);
+            } else if (breathingText.textContent === 'Hold...') {
+                 setTimeout(() => { breathingText.textContent = 'Breathe Out...'; }, 400);
             } else {
-                // Add class to hide the cursor when typing is finished
-                instructionsEl.classList.add('typing-done');
+                 setTimeout(() => { breathingText.textContent = 'Breathe In...'; }, 3800);
             }
-        }
-        // Start the typewriter effect when the page loads
-        window.addEventListener('load', typeWriter);
-        // --- END TYPEWRITER EFFECT ---
+        }, 100);
 
+        // --- Affirmation Button Logic ---
+        const affirmationButton = document.getElementById('affirmationButton');
+        const affirmationMessage = document.getElementById('affirmationMessage');
+        const affirmations = [
+            "You are as wonderful as a field of flowers.",
+            "Your kindness is a superpower.",
+            "It's okay to be gentle with yourself today.",
+            "You are loved more than you know.",
+            "You have a sparkly, amazing spirit!",
+            "Like a star, you shine brightly."
+        ];
 
-        // Variables to keep track of the element being dragged and its offset
-        let activeCharacter = null;
-        let offsetX, offsetY;
-
-        // State to track if they are already colliding to fire confetti only once
-        let isAlreadyColliding = false;
-
-        /**
-         * Function to start dragging a character.
-         * Handles both mouse and touch events.
-         * @param {MouseEvent|TouchEvent} e - The mousedown or touchstart event.
-         */
-        function startDrag(e) {
-            activeCharacter = e.target;
-            activeCharacter.style.cursor = 'grabbing';
-
-            // Get the correct client coordinates for mouse or touch
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            // Calculate the offset from the top-left corner of the element
-            offsetX = clientX - activeCharacter.getBoundingClientRect().left;
-            offsetY = clientY - activeCharacter.getBoundingClientRect().top;
-
-            // Add listeners for both mouse and touch move/end events
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('touchmove', drag, { passive: false }); // passive: false to allow preventDefault
-            
-            document.addEventListener('mouseup', stopDrag);
-            document.addEventListener('touchend', stopDrag);
-        }
-
-        /**
-         * Function to handle the dragging movement.
-         * Handles both mouse and touch events.
-         * @param {MouseEvent|TouchEvent} e - The mousemove or touchmove event.
-         */
-        function drag(e) {
-            if (!activeCharacter) return; // Do nothing if no character is being dragged
-
-            // Prevent default behavior like scrolling on touch devices
-            if (e.type === 'touchmove') {
-                e.preventDefault();
+        affirmationButton.addEventListener('click', () => {
+            const currentAffirmation = affirmationMessage.querySelector('p').textContent;
+            let newAffirmation = currentAffirmation;
+            while (newAffirmation === currentAffirmation) {
+                newAffirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
             }
+            affirmationMessage.querySelector('p').textContent = newAffirmation;
+            affirmationMessage.classList.remove('hidden');
+        });
 
-            // Get the correct client coordinates for mouse or touch
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        // --- Interactive Sparkle Effect ---
+        const sparkleColors = ['#fde047', '#a7f3d0', '#fecaca', '#c7d2fe'];
+        document.getElementById('main-body').addEventListener('click', function(e) {
+            if (e.target.closest('button')) return;
 
-            // Update the character's position
-            activeCharacter.style.left = `${clientX - offsetX}px`;
-            activeCharacter.style.top = `${clientY - offsetY}px`;
+            for (let i = 0; i < 5; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = `${e.clientX}px`;
+                sparkle.style.top = `${e.clientY}px`;
+                sparkle.style.backgroundColor = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
+                
+                const randomX = Math.random() - 0.5;
+                const randomY = Math.random() - 0.5;
+                sparkle.style.setProperty('--x', randomX);
+                sparkle.style.setProperty('--y', randomY);
+                
+                document.body.appendChild(sparkle);
 
-            // Check for collision after every move
-            checkCollision();
-        }
-
-        /**
-         * Function to stop the dragging action.
-         * Handles both mouse and touch events.
-         */
-        function stopDrag() {
-            if (activeCharacter) {
-                 activeCharacter.style.cursor = 'grab'; // Revert cursor
+                setTimeout(() => {
+                    sparkle.remove();
+                }, 800);
             }
-            activeCharacter = null;
-            
-            // Remove all move/end listeners
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('touchmove', drag);
-            document.removeEventListener('mouseup', stopDrag);
-            document.removeEventListener('touchend', stopDrag);
-        }
-
-        /**
-         * Function to check if the two characters are colliding.
-         */
-        function checkCollision() {
-            // Get the bounding rectangles of both characters
-            const boyRect = boy.getBoundingClientRect();
-            const girlRect = girl.getBoundingClientRect();
-
-            // AABB (Axis-Aligned Bounding Box) collision detection logic
-            const isColliding =
-                boyRect.left < girlRect.right &&
-                boyRect.right > girlRect.left &&
-                boyRect.top < girlRect.bottom &&
-                boyRect.bottom > girlRect.top;
-
-            // If they are colliding, add the 'glow' class to both and darken the background
-            if (isColliding) {
-                boy.classList.add('glow');
-                girl.classList.add('glow');
-                document.body.classList.add('contact-bg');
-
-                // If this is the first moment of collision, fire confetti
-                if (!isAlreadyColliding) {
-                    confetti({
-                        particleCount: 200,
-                        spread: 100,
-                        origin: { y: 0.6 }
-                    });
-                    isAlreadyColliding = true; // Set flag to prevent re-firing
-                }
-
-            } else {
-                // Otherwise, remove the 'glow' class and revert the background
-                boy.classList.remove('glow');
-                girl.classList.remove('glow');
-                document.body.classList.remove('contact-bg');
-
-                // Reset the collision flag when they separate
-                isAlreadyColliding = false;
-            }
-        }
-
-        // Add mousedown event listener for desktop
-        boy.addEventListener('mousedown', startDrag);
-        girl.addEventListener('mousedown', startDrag);
-
-        // Add touchstart event listener for mobile
-        boy.addEventListener('touchstart', startDrag);
-        girl.addEventListener('touchstart', startDrag);
-
+        });
     </script>
 
 </body>
